@@ -5,25 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Sistema Bancário</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .account-info {
+            border: 2px solid #aaa;
+            border-radius: 10px; /* Bordas arredondadas */
+            padding: 20px;
+            width: 300px;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #f9f9f9; /* Cor de fundo */
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Sombra */
+        }
+
+        .account-info p {
+            margin: 10px 0; /* Espaçamento entre os parágrafos */
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Dashboard - Sistema Bancário</h1>
+        <h1> WYK - Sistema Bancário</h1>
         <nav>
             <ul>
-                <li><a href="#">Saldo</a></li>
-                <li><a href="#">Extrato</a></li>
-                <li><a href="#">Transferência</a></li>
-                <li><a href="#">Pagamento</a></li>
+                <li><a href="saque.html">Saque</a></li>
+                <li><a href="transferencia.html">Transferência</a></li>
+                
             </ul>
         </nav>
     </header>
 
-    <section class="account-info">
+    <div class="account-info">
         <h2>Informações da Conta</h2>
+        <p>Conta: 123456</p>
+        <p>Nome: Fulano de Tal</p>
         <p>Saldo: R$ 500,00</p>
         <!-- Outras informações da conta aqui -->
-    </section>
+    </div>
 
 </body>
 </html>
