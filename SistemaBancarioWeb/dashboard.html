@@ -36,11 +36,20 @@
 
     <div class="account-info">
         <h2>Informações da Conta</h2>
-        <p>Conta: 123456</p>
-        <p>Nome: Fulano de Tal</p>
-        <p>Saldo: R$ 500,00</p>
+        <p>Conta: <span id="accountNumber"></span></p>
+        <p>Nome: <span id="username"></span></p>
         <!-- Outras informações da conta aqui -->
     </div>
 
+    <script>
+        // Extrair os parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountNumber = urlParams.get('accountNumber');
+        const username = urlParams.get('username');
+
+        // Exibir os dados na página
+        document.getElementById('accountNumber').textContent = accountNumber;
+        document.getElementById('username').textContent = username;
+    </script>
 </body>
 </html>
