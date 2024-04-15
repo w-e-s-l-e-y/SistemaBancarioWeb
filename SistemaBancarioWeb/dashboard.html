@@ -27,7 +27,7 @@
         <h1> WYK - Sistema Bancário</h1>
         <nav>
             <ul>
-                <li><a href="saque.html">Saque</a></li>
+                <li><a href="saque.html">Saque/Deposito</a></li>
                 <li><a href="transferencia.html">Transferência</a></li>
                 
             </ul>
@@ -38,6 +38,7 @@
         <h2>Informações da Conta</h2>
         <p>Conta: <span id="accountNumber"></span></p>
         <p>Nome: <span id="username"></span></p>
+        <p>Saldo: R$ <span id="saldo"></span></p>
         <!-- Outras informações da conta aqui -->
     </div>
 
@@ -50,6 +51,12 @@
         // Exibir os dados na página
         document.getElementById('accountNumber').textContent = accountNumber;
         document.getElementById('username').textContent = username;
+
+        // Obter e exibir o saldo armazenado no localStorage
+        var saldo = localStorage.getItem('saldo');
+        if (saldo !== null) {
+            document.getElementById('saldo').textContent = saldo;
+        }
     </script>
 </body>
 </html>

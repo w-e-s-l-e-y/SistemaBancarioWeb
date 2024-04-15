@@ -3,19 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saque</title>
+    <title>Saque/Depósito - Sistema Bancário</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h2 class="title">Saques</h2>
+        <h1>Saque/Depósito - Sistema Bancário</h1>
+        <nav>
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="transferencia.html">Transferência</a></li>
+            </ul>
+        </nav>
     </header>
-    <form action="process_transfer.php" method="post">
-        <label for="amount">Valor do Saque:</label>
-        <input type="number" id="amount" name="amount" min="0" step="0.01" required>
-        
-       
-        <button type="submit">Sacar</button>
-    </form>
+
+    <section class="transaction-form">
+        <h2>Saque</h2>
+        <form id="saqueForm">
+            <input type="hidden" name="transaction_type" value="saque">
+
+            <label for="saqueAmount">Valor do Saque (R$):</label>
+            <input type="number" id="saqueAmount" name="saqueAmount" step="0.01" min="0" required>
+
+            <!-- Alterado o tipo do botão de "submit" para "button" -->
+            <button type="button" onclick="sacar()">Saque</button>
+        </form>
+    </section>
+
+    <section class="transaction-form">
+        <h2>Depósito</h2>
+        <label for="depositAmount">Valor do Depósito (R$):</label>
+        <input type="number" id="depositAmount" name="depositAmount" step="0.01" min="0" required>
+
+        <button onclick="deposit()">Depósito</button>
+    </section>
+
+    <script>
+        function deposit() {
+            var depositAmount = parseFloat(document.getElementById("depositAmount").value);
+            if (isNaN(depositAmount) || depositAmount <= 0) {
+                alert("Por favor, insira um valor válido para depósito.");
+                return;
+            }
+
+            // Atualiza o saldo no localStorage
+            var saldo = localStorage.getItem('saldo');
+            if (saldo === null) {
+                saldo = 0;
+            }
+            saldo = parseFloat(saldo) + depositAmount;
+            localStorage.setItem('saldo', saldo);
+
+            // Atualiza o saldo na página de dashboard
+            document.getElementById('saldo').textContent = saldo.toFixed(2);
+
+            // Mensagem de sucesso para o depósito
+            alert("Depósito de R$ " + depositAmount.toFixed(2) + " realizado com sucesso!");
+        }
+
+        function sacar() {
+            var saqueAmount = parseFloat(document.getElementById("saqueAmount").value);
+            var saldo = parseFloat(localStorage.getItem('saldo'));
+            if (isNaN(saqueAmount) || saqueAmount <= 0 || saqueAmount > saldo) {
+                alert("Valor de saque inválido.");
+                return;
+            }
+
+            saldo -= saqueAmount;
+            localStorage.setItem('saldo', saldo);
+
+            document.getElementById('saldo').textContent = saldo.toFixed(2);
+
+            // Mensagem de sucesso para o saque
+            alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+        }
+    </script>
 </body>
 </html>
