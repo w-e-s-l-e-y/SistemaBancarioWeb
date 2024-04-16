@@ -36,33 +36,38 @@ nav ul li a {
 }
 
 .main-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
-    margin: 50px auto;
+    height: 50vh;
     padding: 20px;
-    background-color: #fff;
-    border-radius: 5px;
+    background-color: lightgray;
+    border-radius: 10%;
     width: 80%;
-    max-width: 600px;
-}
+    max-width: 500px;
+    margin: auto;
+    margin-top: 10%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
 
 .buttons {
-    margin-top: 20px;
+display: flex;
+justify-content: center;
+align-items: center;
+margin-top: 20px;
 }
 
 .btn-login,
 .btn-register {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #333;
-    color: #fff;
-    text-decoration: none;
-    border: none;
-    border-radius: 5px;
-    margin-right: 10px;
-    cursor: pointer;
-}
-
-.btn-login:hover,
-.btn-register:hover {
-    background-color: #555;
+display: inline-block;
+padding: 10px 20px;
+background-color: #333;
+color: #fff;
+text-decoration: none;
+border: none;
+border-radius: 5px;
+margin-right: 10px;
+cursor: pointer;
 }
