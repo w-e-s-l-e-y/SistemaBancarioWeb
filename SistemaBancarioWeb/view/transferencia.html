@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferência</title>
+    <link rel="stylesheet" href="../public/styles.css">
+    <style>
+        .success-message {
+            color: green;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h2 class="title">Transferência</h2>
+
+        <nav>
+            <ul>
+                <!-- Adicione IDs aos links para poder acessá-los via JavaScript -->
+                <li><a id="dashboardLink" href="#" onclick="redirectToDashboard()">Dashboard</a></li>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+
+    </header>
+    <form id="transferForm">
+        <label for="amount">Valor da Transferência:</label>
+        <input type="number" id="amount" name="amount" min="0" step="0.01" required>
+
+        <label for="destination">Conta de Destino:</label>
+        <input type="text" id="destination" name="destination" required>
+
+        <button type="button" onclick="realizarTransferencia()">Transferir</button>
+        <div id="message" class="hidden"></div>
+    </form>
+
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtIGxA5l2gtDiA1XkGieUmFfWKQycEe3Q",
+            authDomain: "wykbank-5b21d.firebaseapp.com",
+            databaseURL: "https://wykbank-5b21d-default-rtdb.firebaseio.com",
+            projectId: "wykbank-5b21d",
+            storageBucket: "wykbank-5b21d.appspot.com",
+            messagingSenderId: "258416889029",
+            appId: "1:258416889029:web:44f6c7a611ee43116174ac",
+            measurementId: "G-SGMM5N5BXW"
+        };
+
+        // Inicializar Firebase com a configuração importada
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência ao banco de dados
+        const database = firebase.database();
+
+        // Extrair os parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountNumber = urlParams.get('accountNumber');
+        const username = urlParams.get('username');
+        let saldo = parseFloat(urlParams.get('saldo'));
+
+        console.log("accountNumber:", accountNumber);
+        console.log("username:", username);
+        console.log("saldo:", saldo);
+
+        // Função para redirecionar para o Dashboard com os parâmetros da URL
+        function redirectToDashboard() {
+            const newParams = new URLSearchParams();
+            newParams.set('accountNumber', accountNumber);
+            newParams.set('username', username);
+            newParams.set('saldo', saldo);
+
+            window.location.href = `dashboard.html?${newParams}`;
+        }
+
+        // Função para realizar a transferência
+        function realizarTransferencia() {
+            console.log("Botão Transferir clicado!");
+
+            var amount = parseFloat(document.getElementById('amount').value);
+            var destination = document.getElementById('destination').value;
+
+            console.log("Valor da transferência:", amount);
+            console.log("Conta de destino:", destination);
+
+            if (isNaN(amount) || amount <= 0) {
+                showMessage('error', 'Digite um valor válido para a transferência.');
+                return;
+            }
+
+            if (!destination.trim()) {
+                showMessage('error', 'Digite a conta de destino.');
+                return;
+            }
+
+            // Definir a referência da conta de destino corretamente
+            const correntistaDestinoRef = database.ref('correntistas/' + destination);
+            const correntistaRef = database.ref('correntistas/' + accountNumber);
+
+            console.log("correntistaDestinoRef:", correntistaDestinoRef);
+
+            // Realizar a transferência no Firebase
+            correntistaDestinoRef.once('value', function (snapshot) {
+                console.log("Snapshot:", snapshot);
+
+                if (snapshot.exists()) {
+                    const dadosDestino = snapshot.val();
+                    console.log("Dados do destino:", dadosDestino);
+
+                    let saldoDestino = parseFloat(dadosDestino.saldo);
+                    console.log("Saldo destino antes:", saldoDestino);
+
+                    saldoDestino += amount; // Adiciona o valor transferido ao saldo da conta de destino
+
+                    console.log("Saldo destino após transferência:", saldoDestino);
+
+                    // Atualizar o saldo da conta de destino
+                    correntistaDestinoRef.update({
+                        saldo: saldoDestino
+                    });
+
+                    // Subtrair o valor transferido do saldo da conta de origem
+                    saldo -= amount;
+
+                    console.log("Saldo conta de origem após transferência:", saldo);
+
+                    // Atualizar o saldo da conta de origem
+                    correntistaRef.update({
+                        saldo: saldo
+                    });
+
+                    // Exibindo mensagem de sucesso
+                    showMessage('success', 'Transferência realizada com sucesso!');
+
+                    // Modificar o parâmetro da URL
+                    const newParams = new URLSearchParams(window.location.search);
+                    newParams.set('saldo', saldo);
+                    window.history.pushState({}, '', `${window.location.pathname}?${newParams}`);
+                } else {
+                    showMessage('error', 'Conta de destino não encontrada.');
+                }
+            });
+        }
+
+
+        function showMessage(type, message) {
+            console.log("Mensagem:", message);
+
+            var messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+            messageDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

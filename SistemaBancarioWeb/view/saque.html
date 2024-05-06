@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saque/Depósito - Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css"> <!-- Adiciona o arquivo de estilo externo -->
+</head>
+
+<body>
+    <header>
+        <h1>Saque/Depósito - Sistema Bancário</h1>
+        <nav>
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="transferencia.html">Transferência</a></li>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+    </header>
+
+    <section class="transaction-form saque">
+        <h2>Saque</h2>
+        <form id="saqueForm">
+            <input type="hidden" name="transaction_type" value="saque">
+            <label for="saqueAmount">Valor do Saque (R$):</label>
+            <input type="number" id="saqueAmount" name="saqueAmount" step="0.01" min="0" required>
+            <button type="button" onclick="sacar()">Saque</button>
+        </form>
+    </section>
+
+    <section class="transaction-form deposit">
+        <h2>Depósito</h2>
+        <form id="depositForm">
+            <label for="depositAmount">Valor do Depósito (R$):</label>
+            <input type="number" id="depositAmount" name="depositAmount" step="0.01" min="0" required>
+            <button type="button" onclick="deposit()">Depósito</button>
+        </form>
+    </section>
+
+    <!-- Inclua os arquivos do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var accountNumber = urlParams.get('accountNumber');
+            var username = urlParams.get('username');
+
+            // Configurar os links
+            var dashboardLink = document.querySelector('a[href="dashboard.html"]');
+            var transferenciaLink = document.querySelector('a[href="transferencia.html"]');
+
+            if (dashboardLink) {
+                dashboardLink.addEventListener("click", function (event) {
+                    event.preventDefault(); // Impede o comportamento padrão do link
+
+                    // Consulta ao banco de dados para obter o saldo mais recente
+                    var correntistaRef = firebase.database().ref('correntistas/' + accountNumber);
+                    correntistaRef.once('value', function (snapshot) {
+                        var saldo = snapshot.val().saldo;
+
+                        // Atualizar a URL com o saldo mais recente
+                        var newURL = "dashboard.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
+                        window.location.href = newURL; // Redireciona para a nova URL
+                    });
+                });
+            }
+
+            if (transferenciaLink) {
+                transferenciaLink.addEventListener("click", function (event) {
+                    event.preventDefault(); // Impede o comportamento padrão do link
+
+                    // Consulta ao banco de dados para obter o saldo mais recente
+                    var correntistaRef = firebase.database().ref('correntistas/' + accountNumber);
+                    correntistaRef.once('value', function (snapshot) {
+                        var saldo = snapshot.val().saldo;
+
+                        // Atualizar a URL com o saldo mais recente
+                        var newURL = "transferencia.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
+                        window.location.href = newURL; // Redireciona para a nova URL
+                    });
+                });
+            }
+        });
+
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtIGxA5l2gtDiA1XkGieUmFfWKQycEe3Q",
+            authDomain: "wykbank-5b21d.firebaseapp.com",
+            databaseURL: "https://wykbank-5b21d-default-rtdb.firebaseio.com",
+            projectId: "wykbank-5b21d",
+            storageBucket: "wykbank-5b21d.appspot.com",
+            messagingSenderId: "258416889029",
+            appId: "1:258416889029:web:44f6c7a611ee43116174ac",
+            measurementId: "G-SGMM5N5BXW"
+        };
+
+        // Inicializar Firebase com a configuração importada
+        firebase.initializeApp(firebaseConfig);
+
+        // Extrair os parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log("URL: ", window.location.href); // Log da URL completa
+        console.log("Parâmetros da URL: ", urlParams.toString()); // Log dos parâmetros da URL
+
+        // Função para depositar
+        function deposit() {
+            var depositAmount = parseFloat(document.getElementById("depositAmount").value);
+            if (isNaN(depositAmount) || depositAmount <= 0) {
+                alert("Por favor, insira um valor válido para depósito.");
+                return;
+            }
+
+            var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
+            var correntistaRef = firebase.database().ref('correntistas/' + accountNumber); // Referência ao nó do correntista
+
+            // Atualiza o saldo do correntista dentro de uma transação
+            correntistaRef.transaction(function (correntista) {
+                if (correntista) {
+                    // Se o correntista existir, atualiza o saldo adicionando o valor do depósito
+                    correntista.saldo = (correntista.saldo || 0) + depositAmount;
+                }
+                return correntista; // Retorna o correntista atualizado
+            }, function (error, committed, snapshot) {
+                if (error) {
+                    alert("Erro ao processar o depósito. Por favor, tente novamente.");
+                } else if (committed) {
+                    alert("Depósito de R$ " + depositAmount.toFixed(2) + " realizado com sucesso!");
+                }
+            });
+        }
+
+        // Função para sacar
+        function sacar() {
+            var saqueAmount = parseFloat(document.getElementById("saqueAmount").value);
+            console.log("Valor do saque:", saqueAmount);
+
+            var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
+            console.log("Número da conta:", accountNumber);
+
+            var correntistaRef = firebase.database().ref('correntistas/' + accountNumber); // Referência ao nó do correntista
+
+            // Recuperar dados do correntista do Firebase
+            correntistaRef.once('value', function (snapshot) {
+                var correntista = snapshot.val();
+                console.log("Dados do correntista:", correntista);
+
+                if (!correntista) {
+                    console.log("Correntista não encontrado.");
+                    return;
+                }
+
+                // Verifica se o saldo é suficiente para o saque
+                if (correntista.saldo >= saqueAmount) {
+                    // Atualiza o saldo do correntista diretamente no Firebase
+                    correntistaRef.update({
+                        saldo: correntista.saldo - saqueAmount
+                    }, function (error) {
+                        if (error) {
+                            alert("Erro ao processar o saque. Por favor, tente novamente.");
+                        } else {
+                            alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                        }
+                    });
+                } else {
+                    console.log("Saldo insuficiente para realizar o saque.");
+                    alert("Saldo insuficiente para realizar o saque.");
+                }
+            });
+        }
+
+
+
+
+
+    </script>
+</body>
+
+</html>

@@ -36,38 +36,122 @@ nav ul li a {
 }
 
 .main-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     text-align: center;
-    height: 50vh;
+    margin: 50px auto;
     padding: 20px;
-    background-color: lightgray;
-    border-radius: 10%;
+    background-color: #fff;
+    border-radius: 5px;
     width: 80%;
-    max-width: 500px;
-    margin: auto;
-    margin-top: 10%;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    }
+    max-width: 600px;
+}
 
 .buttons {
-display: flex;
-justify-content: center;
-align-items: center;
-margin-top: 20px;
+    margin-top: 20px;
 }
 
 .btn-login,
 .btn-register {
-display: inline-block;
-padding: 10px 20px;
-background-color: #333;
-color: #fff;
-text-decoration: none;
-border: none;
-border-radius: 5px;
-margin-right: 10px;
-cursor: pointer;
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.btn-login:hover,
+.btn-register:hover {
+    background-color: #555;
+}
+
+/* Estilos adicionais para a página de login */
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    margin: 20px auto;
+}
+
+form label {
+    display: block;
+    margin-bottom: 4px; /* Diminui a margem entre a label e o campo */
+    margin-top: 12px; /* Aumenta a margem acima da label */
+}
+
+form input[type="text"],
+form input[type="number"],
+form input[type="email"],
+form input[type="password"],
+form button {
+    margin-top: 6px; /* Diminui a margem acima do campo */
+    padding: 8px;
+    width: calc(100% - 16px);
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+form button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+.title {
+    margin: 0;
+}
+
+.logo {
+    width: 25%; /* Ajuste o tamanho da imagem conforme desejado */
+}
+
+/* Estilos para a seção de saque */
+.transaction-form.saque {
+    margin-top: 30px;
+    border: 2px solid #FF5733; /* Cor vermelha para saque */
+    padding: 20px;
+    border-radius: 10px;
+}
+.transaction-form.saque h2 {
+    color: #FF5733; /* Cor do texto para saque */
+}
+.transaction-form.saque label {
+    color: #FF5733; /* Cor do texto para saque */
+}
+.transaction-form.saque input[type="number"] {
+    border: 2px solid #FF5733; /* Cor da borda para saque */
+}
+.transaction-form.saque button {
+    background-color: #FF5733; /* Cor de fundo do botão para saque */
+}
+
+/* Estilos para a seção de depósito */
+.transaction-form.deposit {
+    margin-top: 30px;
+    border: 2px solid #337DFF; /* Cor azul para depósito */
+    padding: 20px;
+    border-radius: 10px;
+}
+.transaction-form.deposit h2 {
+    color: #337DFF; /* Cor do texto para depósito */
+}
+.transaction-form.deposit label {
+    color: #337DFF; /* Cor do texto para depósito */
+}
+.transaction-form.deposit input[type="number"] {
+    border: 2px solid #337DFF; /* Cor da borda para depósito */
+}
+.transaction-form.deposit button {
+    background-color: #337DFF; /* Cor de fundo do botão para depósito */
 }

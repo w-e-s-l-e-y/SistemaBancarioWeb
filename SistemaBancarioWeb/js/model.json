@@ -1,0 +1,35 @@
+  {
+    "correntistas": {
+      "1": {
+        "nome": "Fulano de Tal",
+        "idade": 35,
+        "email": "fulano@example.com",
+        "tipo": 1,
+        "ativo": 1,
+        "saldo": 5000,
+        "cheque_especial": 900,
+        "conta": 1
+      },
+      "2": {
+        "nome": "Ciclana",
+        "idade": 28,
+        "email": "ciclana@example.com",
+        "tipo": 1,
+        "ativo": 1,
+        "saldo": 10000,
+        "cheque_especial": 900,
+        "conta": 2
+      },
+      "-Mq3pLkSeWj3e1kFt7Y": {
+        "nome": "Novo Correntista",
+        "idade": 0,
+        "email": "novocorrentista@example.com",
+        "tipo": 1,
+        "ativo": 1,
+        "saldo": 0,
+        "cheque_especial": 0,
+        "conta": 3
+      }
+    }
+  }
+  

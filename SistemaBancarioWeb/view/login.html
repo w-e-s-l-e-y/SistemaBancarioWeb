@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css">
+</head>
+
+<body>
+    <header>
+        <img src="../public/imgs/_b7cacc34-feda-4d23-b983-75d1944c5123-removebg-preview.png" alt="Logo" class="logo">
+        <h1>Login - Sistema Bancário</h1>
+    </header>
+
+    <section class="login-form">
+        <form id="loginForm" action="../TelaPrincipal/dashboard.html">
+            <label for="accountNumber">Número da Conta:</label>
+            <input type="text" id="accountNumber" name="accountNumber" pattern="[0-9]+"
+                title="Por favor, insira apenas números" required>
+
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" name="username" required>
+
+            <button type="button" onclick="validateLogin()">Login</button>
+        </form>
+    </section>
+
+    <!-- Inclua os arquivos do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        console.log("Configurando o Firebase...");
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtIGxA5l2gtDiA1XkGieUmFfWKQycEe3Q",
+            authDomain: "wykbank-5b21d.firebaseapp.com",
+            databaseURL: "https://wykbank-5b21d-default-rtdb.firebaseio.com",
+            projectId: "wykbank-5b21d",
+            storageBucket: "wykbank-5b21d.appspot.com",
+            messagingSenderId: "258416889029",
+            appId: "1:258416889029:web:44f6c7a611ee43116174ac",
+            measurementId: "G-SGMM5N5BXW"
+        };
+
+        // Inicializar Firebase com a configuração importada
+        console.log("Inicializando o Firebase...");
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência ao banco de dados
+        console.log("Referenciando ao banco de dados...");
+        const database = firebase.database();
+
+        // Função para validar login
+        function validateLogin() {
+            console.log("Validando login...");
+            var accountNumber = document.getElementById("accountNumber").value;
+            var username = document.getElementById("username").value;
+
+            // Referência ao correntista no banco de dados
+            console.log("Referenciando ao correntista no banco de dados...");
+            const correntistaRef = database.ref('correntistas/' + accountNumber);
+
+            // Lê os dados do correntista
+            correntistaRef.once('value', function (snapshot) {
+                console.log("Lendo dados do correntista...");
+                if (snapshot.exists()) {
+                    // Obtém os dados do correntista
+                    console.log("Dados do correntista existem...");
+                    const dados = snapshot.val();
+                    // Obtém o saldo do correntista
+                    const saldo = dados.saldo;
+
+                    if (dados.nome === username) {
+                        // Redireciona para a página dashboard.html com os parâmetros da conta, nome de usuário e saldo
+                        console.log("Redirecionando para a página dashboard.html...");
+                        window.location.href = "../view/dashboard.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
+                    } else {
+                        // Exibe uma mensagem de erro se o nome de usuário não corresponder
+                        console.log("Usuário inválido. Por favor, tente novamente!");
+                        alert("Usuário inválido. Por favor, tente novamente!");
+                    }
+                } else {
+                    // Exibe uma mensagem de erro se o número da conta não corresponder a um registro
+                    console.log("Número da conta inválido. Por favor, tente novamente!");
+                    alert("Número da conta inválido. Por favor, tente novamente!");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

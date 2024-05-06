@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Cadastro - Sistema Bancário</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+    </header>
+
+    <section class="register-form">
+        <form id="registerForm">
+            <label for="name">Nome:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="age">Idade:</label>
+            <input type="number" id="age" name="age" required min="0">
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="type">Tipo:</label>
+            <input type="number" id="type" name="type" required min="0">
+
+            <label for="initialBalance">Saldo Inicial:</label>
+            <input type="number" id="initialBalance" name="initialBalance" required min="0">
+
+            <button type="submit">Cadastrar</button>
+        </form>
+    </section>
+
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtIGxA5l2gtDiA1XkGieUmFfWKQycEe3Q",
+            authDomain: "wykbank-5b21d.firebaseapp.com",
+            databaseURL: "https://wykbank-5b21d-default-rtdb.firebaseio.com",
+            projectId: "wykbank-5b21d",
+            storageBucket: "wykbank-5b21d.appspot.com",
+            messagingSenderId: "258416889029",
+            appId: "1:258416889029:web:44f6c7a611ee43116174ac",
+            measurementId: "G-SGMM5N5BXW"
+        };
+
+        // Inicializar Firebase com a configuração importada
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência ao banco de dados
+        const database = firebase.database();
+
+        document.getElementById("registerForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            var name = document.getElementById("name").value;
+            var age = parseInt(document.getElementById("age").value);
+            var email = document.getElementById("email").value;
+            var type = parseInt(document.getElementById("type").value);
+            var initialBalance = parseFloat(document.getElementById("initialBalance").value);
+
+            criarNovoCorrentista(name, age, email, type, initialBalance);
+        });
+
+        // Função para criar um novo correntista
+        function criarNovoCorrentista(nome, idade, email, tipo, saldoInicial) {
+            // Referência para o nó do contador
+            const contadorRef = database.ref('contador');
+
+            // Incrementa o contador e cria o novo registro em uma transação
+            contadorRef.transaction(function (contadorAtual) {
+                return (contadorAtual || 0) + 1; // Incrementa o contador
+            }, function (error, committed, snapshot) {
+                if (error) {
+                    console.error('Erro ao incrementar contador:', error);
+                } else if (committed) {
+                    // Se a transação foi bem-sucedida, obtém o novo número de conta
+                    const proximoNumeroConta = snapshot.val();
+
+                    // Cria o novo registro com o número de conta gerado automaticamente
+                    const novoRegistroRef = database.ref('correntistas/' + proximoNumeroConta);
+                    novoRegistroRef.set({
+                        nome: nome,
+                        idade: idade,
+                        email: email,
+                        tipo: tipo,
+                        ativo: 1,
+                        saldo: saldoInicial,
+                        cheque_especial: 900,
+                        conta: proximoNumeroConta
+                    });
+
+                    console.log('Novo registro criado com o número de conta:', proximoNumeroConta);
+                    // Redirecionar o usuário para telaBanner.html
+                    window.location.href = 'telaBanner.html';
+                } else {
+                    console.warn('Transação de incremento de contador não foi cometida.');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

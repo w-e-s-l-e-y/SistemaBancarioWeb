@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css">
+    <style>
+        .account-info {
+            border: 2px solid #aaa;
+            border-radius: 10px;
+            /* Bordas arredondadas */
+            padding: 20px;
+            width: 300px;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #f9f9f9;
+            /* Cor de fundo */
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            /* Sombra */
+        }
+
+        .account-info p {
+            margin: 10px 0;
+            /* Espaçamento entre os parágrafos */
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1> WYK - Sistema Bancário</h1>
+        <nav>
+            <ul>
+                <!-- Adicione IDs aos links para poder acessá-los via JavaScript -->
+                <li><a id="saqueLink" href="#">Saque/Deposito</a></li>
+                <li><a id="transferenciaLink" href="#">Transferência</a></li>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+    </header>
+
+    <div class="account-info">
+        <h2>Informações da Conta</h2>
+        <p>Conta: <span id="accountNumber"></span></p>
+        <p>Nome: <span id="username"></span></p>
+        <p>Saldo: R$ <span id="saldo"></span></p>
+        <!-- Outras informações da conta aqui -->
+    </div>
+
+    <script>
+        // Extrair os parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountNumber = urlParams.get('accountNumber');
+        const username = urlParams.get('username');
+        const saldo = urlParams.get('saldo');
+
+        // Exibir os dados na página
+        document.getElementById('accountNumber').textContent = accountNumber;
+        document.getElementById('username').textContent = username;
+
+        // Verifica se o saldo é válido e exibe na página
+        if (saldo !== null && !isNaN(parseFloat(saldo))) { // Verifica se o saldo é válido
+            document.getElementById('saldo').textContent = 'R$ ' + parseFloat(saldo).toFixed(2); // Formata o saldo para duas casas decimais
+        } else {
+            document.getElementById('saldo').textContent = 'Saldo indisponível'; // Exibe uma mensagem de saldo indisponível se o saldo for inválido
+        }
+
+        // Obter os links de saque e transferência
+        const saqueLink = document.getElementById('saqueLink');
+        const transferenciaLink = document.getElementById('transferenciaLink');
+
+        // Adicionar os parâmetros à URL ao clicar nos links
+        saqueLink.addEventListener('click', function() {
+            saqueLink.href = `saque.html?accountNumber=${accountNumber}&username=${username}&saldo=${saldo}`;
+        });
+
+        transferenciaLink.addEventListener('click', function() {
+            transferenciaLink.href = `transferencia.html?accountNumber=${accountNumber}&username=${username}&saldo=${saldo}`;
+        });
+    </script>
+</body>
+
+</html>

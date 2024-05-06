@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css"><!-- Corrigido o caminho para o arquivo CSS -->
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .main-content {
+            background-color: #fff; /* Defina a cor de fundo da caixa */
+            border-radius: 10px; /* Arredonde as bordas */
+            padding: 20px; /* Adicione espaçamento interno */
+            display: inline-block; /* Permita que a caixa tenha largura e altura baseadas no conteúdo */
+            text-align: center; /* Centralize o conteúdo */
+            width: calc(300px + (300px / 3)); /* Aumenta a largura em 1/3 */
+            height: 190px; /* Diminui a altura pela metade */
+        }
+    </style>
+</head>
+<body>
+    <section class="main-content">
+        <h2>Bem-vindo ao Sistema Bancário</h2>
+        <p>Faça login ou cadastre-se para acessar sua conta.</p>
+        <div class="buttons">
+            <a href="login.html" class="btn-login">Login</a>
+            <a href="register.html" class="btn-register">Cadastre-se</a>
+        </div>
+    </section>
+
+</body>
+</html>
