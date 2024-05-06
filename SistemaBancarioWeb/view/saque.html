@@ -157,6 +157,7 @@
                 // Verifica se o saldo é suficiente para o saque
                 if (correntista.saldo >= saqueAmount) {
                     // Atualiza o saldo do correntista diretamente no Firebase
+                    console.log("Atualizando o saldo do correntista:", correntista.saldo - saqueAmount);
                     correntistaRef.update({
                         saldo: correntista.saldo - saqueAmount
                     }, function (error) {
@@ -166,17 +167,63 @@
                             alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
                         }
                     });
+                } else if (correntista.cheque_especial >= (saqueAmount - correntista.saldo)) {
+                    // Caso o saldo não seja suficiente, mas o cheque especial seja, realiza o saque utilizando o cheque especial
+                    const novoSaldo = correntista.saldo - saqueAmount;
+                    console.log("Utilizando cheque especial. Novo saldo:", novoSaldo);
+                    correntistaRef.update({
+                        saldo: novoSaldo,
+                        cheque_especial: correntista.cheque_especial - (saqueAmount - correntista.saldo)
+                    }, function (error) {
+                        if (error) {
+                            alert("Erro ao processar o saque. Por favor, tente novamente.");
+                        } else {
+                            alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                        }
+                    });
                 } else {
                     console.log("Saldo insuficiente para realizar o saque.");
-                    alert("Saldo insuficiente para realizar o saque.");
+                    alert("Valor do saque excede o limite do saldo e do cheque especial.");
                 }
+
+
+                // Verifica se o saldo é suficiente para o saque
+                if (correntista.saldo >= saqueAmount || (correntista.saldo + correntista.cheque_especial) >= saqueAmount) {
+                    // Verifica se o saldo é suficiente sem utilizar o cheque especial
+                    if (correntista.saldo >= saqueAmount) {
+                        // Atualiza o saldo do correntista diretamente no Firebase
+                        console.log("Atualizando o saldo do correntista:", correntista.saldo - saqueAmount);
+                        correntistaRef.update({
+                            saldo: correntista.saldo - saqueAmount
+                        }, function (error) {
+                            if (error) {
+                                alert("Erro ao processar o saque. Por favor, tente novamente.");
+                            } else {
+                                alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                            }
+                        });
+                    } else {
+                        // Utiliza o cheque especial para cobrir o saque
+                        const novoSaldo = correntista.saldo - saqueAmount;
+                        console.log("Utilizando cheque especial. Novo saldo:", novoSaldo);
+                        correntistaRef.update({
+                            saldo: novoSaldo,
+                            cheque_especial: correntista.cheque_especial - (saqueAmount - correntista.saldo)
+                        }, function (error) {
+                            if (error) {
+                                alert("Erro ao processar o saque. Por favor, tente novamente.");
+                            } else {
+                                alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                            }
+                        });
+                    }
+                } else {
+                    console.log("Saldo insuficiente para realizar o saque.");
+                    alert("Valor do saque excede o limite do saldo e do cheque especial.");
+                }
+
             });
         }
-
-
-
-
-
     </script>
 </body>
 
