@@ -116,23 +116,51 @@
             }
 
             var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
+            console.log("Número da conta:", accountNumber);
+
             var correntistaRef = firebase.database().ref('correntistas/' + accountNumber); // Referência ao nó do correntista
 
             // Atualiza o saldo do correntista dentro de uma transação
             correntistaRef.transaction(function (correntista) {
                 if (correntista) {
-                    // Se o correntista existir, atualiza o saldo adicionando o valor do depósito
-                    correntista.saldo = (correntista.saldo || 0) + depositAmount;
+                    console.log("Dados do correntista antes da transação:", correntista);
+
+                    // Se o correntista existir
+                    if (correntista.saldo < 0) {
+                        console.log("Saldo negativo detectado. Saldo atual:", correntista.saldo);
+
+                        // Se o saldo for negativo, estamos lidando com o cheque especial
+                        var valorCompensado = Math.min(Math.abs(correntista.saldo), depositAmount); // Calcula o valor a ser compensado
+                        console.log("Valor a ser compensado:", valorCompensado);
+
+                        correntista.saldo += valorCompensado; // Compensa o saldo negativo
+                        correntista.cheque_especial -= valorCompensado; // Reduz o saldo do cheque especial
+                        console.log("Novo saldo após compensação:", correntista.saldo);
+                        console.log("Novo limite do cheque especial após compensação:", correntista.cheque_especial);
+                        depositAmount -= valorCompensado; // Reduz o valor do depósito
+                        console.log("Depósito após compensação:", depositAmount);
+                    }
+
+                    // Adiciona o restante do valor do depósito ao saldo
+                    correntista.saldo += depositAmount;
+                    correntista.cheque_especial += depositAmount; // Aumenta o limite do cheque especial
+                    console.log("Saldo final após depósito:", correntista.saldo);
+                    console.log("Novo limite do cheque especial:", correntista.cheque_especial);
                 }
                 return correntista; // Retorna o correntista atualizado
             }, function (error, committed, snapshot) {
                 if (error) {
                     alert("Erro ao processar o depósito. Por favor, tente novamente.");
+                    console.error("Erro durante a transação de depósito:", error);
                 } else if (committed) {
                     alert("Depósito de R$ " + depositAmount.toFixed(2) + " realizado com sucesso!");
+                    console.log("Depósito confirmado. Valor depositado:", depositAmount.toFixed(2));
                 }
             });
         }
+
+
+
 
         // Função para sacar
         function sacar() {
@@ -155,44 +183,17 @@
                 }
 
                 // Verifica se o saldo é suficiente para o saque
-                if (correntista.saldo >= saqueAmount) {
-                    // Atualiza o saldo do correntista diretamente no Firebase
-                    console.log("Atualizando o saldo do correntista:", correntista.saldo - saqueAmount);
-                    correntistaRef.update({
-                        saldo: correntista.saldo - saqueAmount
-                    }, function (error) {
-                        if (error) {
-                            alert("Erro ao processar o saque. Por favor, tente novamente.");
-                        } else {
-                            alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
-                        }
-                    });
-                } else if (correntista.cheque_especial >= (saqueAmount - correntista.saldo)) {
-                    // Caso o saldo não seja suficiente, mas o cheque especial seja, realiza o saque utilizando o cheque especial
-                    const novoSaldo = correntista.saldo - saqueAmount;
-                    console.log("Utilizando cheque especial. Novo saldo:", novoSaldo);
-                    correntistaRef.update({
-                        saldo: novoSaldo,
-                        cheque_especial: correntista.cheque_especial - (saqueAmount - correntista.saldo)
-                    }, function (error) {
-                        if (error) {
-                            alert("Erro ao processar o saque. Por favor, tente novamente.");
-                        } else {
-                            alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
-                        }
-                    });
-                } else {
-                    console.log("Saldo insuficiente para realizar o saque.");
-                    alert("Valor do saque excede o limite do saldo e do cheque especial.");
-                }
+                console.log("Valor do saque:", saqueAmount);
+                console.log("Saldo do correntista:", correntista.saldo);
+                console.log("Limite do cheque especial:", correntista.cheque_especial);
 
-
-                // Verifica se o saldo é suficiente para o saque
                 if (correntista.saldo >= saqueAmount || (correntista.saldo + correntista.cheque_especial) >= saqueAmount) {
-                    // Verifica se o saldo é suficiente sem utilizar o cheque especial
+                    console.log("Saldo ou limite do cheque especial é suficiente para o saque.");
+
                     if (correntista.saldo >= saqueAmount) {
-                        // Atualiza o saldo do correntista diretamente no Firebase
+                        console.log("Saldo é suficiente para o saque sem usar o cheque especial.");
                         console.log("Atualizando o saldo do correntista:", correntista.saldo - saqueAmount);
+
                         correntistaRef.update({
                             saldo: correntista.saldo - saqueAmount
                         }, function (error) {
@@ -203,12 +204,26 @@
                             }
                         });
                     } else {
-                        // Utiliza o cheque especial para cobrir o saque
-                        const novoSaldo = correntista.saldo - saqueAmount;
-                        console.log("Utilizando cheque especial. Novo saldo:", novoSaldo);
+                        console.log("Saldo é insuficiente, utilizando cheque especial.");
+
+                        let novoSaldo = correntista.saldo - saqueAmount; // Alterado para 'let' para permitir reatribuição
+                        let novoLimiteChequeEspecial = correntista.cheque_especial;
+
+                        if (novoSaldo < 0) {
+                            console.log("Saldo negativo, utilizando cheque especial para cobrir o saque.");
+
+                            novoLimiteChequeEspecial -= Math.abs(novoSaldo); // Subtrai o saldo negativo do limite do cheque especial
+                            novoSaldo = novoSaldo; // Define o saldo como o valor negativo
+                        }
+
+                        console.log("Novo saldo:", novoSaldo);
+                        console.log("Novo limite do cheque especial:", novoLimiteChequeEspecial);
+
+
+
                         correntistaRef.update({
                             saldo: novoSaldo,
-                            cheque_especial: correntista.cheque_especial - (saqueAmount - correntista.saldo)
+                            cheque_especial: novoLimiteChequeEspecial
                         }, function (error) {
                             if (error) {
                                 alert("Erro ao processar o saque. Por favor, tente novamente.");
