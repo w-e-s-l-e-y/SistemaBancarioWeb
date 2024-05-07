@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lldng="pt-BR">
 
 <head>
     <meta charset="UTF-8">
@@ -187,13 +187,18 @@
                 console.log("Saldo do correntista:", correntista.saldo);
                 console.log("Limite do cheque especial:", correntista.cheque_especial);
 
-                if (correntista.saldo >= saqueAmount || (correntista.saldo + correntista.cheque_especial) >= saqueAmount) {
+                // Calcula o saldo disponível, considerando o cheque especial
+                var saldoDisponivel = correntista.saldo + correntista.cheque_especial;
+
+                if (saldoDisponivel >= saqueAmount) {
                     console.log("Saldo ou limite do cheque especial é suficiente para o saque.");
 
+                    // Se o saldo for suficiente para cobrir o saque
                     if (correntista.saldo >= saqueAmount) {
                         console.log("Saldo é suficiente para o saque sem usar o cheque especial.");
                         console.log("Atualizando o saldo do correntista:", correntista.saldo - saqueAmount);
 
+                        // Atualiza o saldo
                         correntistaRef.update({
                             saldo: correntista.saldo - saqueAmount
                         }, function (error) {
@@ -206,21 +211,14 @@
                     } else {
                         console.log("Saldo é insuficiente, utilizando cheque especial.");
 
-                        let novoSaldo = correntista.saldo - saqueAmount; // Alterado para 'let' para permitir reatribuição
-                        let novoLimiteChequeEspecial = correntista.cheque_especial;
-
-                        if (novoSaldo < 0) {
-                            console.log("Saldo negativo, utilizando cheque especial para cobrir o saque.");
-
-                            novoLimiteChequeEspecial -= Math.abs(novoSaldo); // Subtrai o saldo negativo do limite do cheque especial
-                            novoSaldo = novoSaldo; // Define o saldo como o valor negativo
-                        }
+                        // Calcula o novo saldo e o novo limite do cheque especial
+                        let novoSaldo = 0;
+                        let novoLimiteChequeEspecial = correntista.cheque_especial - (saqueAmount - correntista.saldo);
 
                         console.log("Novo saldo:", novoSaldo);
                         console.log("Novo limite do cheque especial:", novoLimiteChequeEspecial);
 
-
-
+                        // Atualiza o saldo e o limite do cheque especial
                         correntistaRef.update({
                             saldo: novoSaldo,
                             cheque_especial: novoLimiteChequeEspecial
@@ -236,9 +234,9 @@
                     console.log("Saldo insuficiente para realizar o saque.");
                     alert("Valor do saque excede o limite do saldo e do cheque especial.");
                 }
-
             });
         }
+
     </script>
 </body>
 
