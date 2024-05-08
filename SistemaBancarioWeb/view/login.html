@@ -72,9 +72,29 @@
                     const dados = snapshot.val();
                     // Obtém o saldo do correntista
                     const saldo = dados.saldo;
+                    console.log("Saldo:", saldo);
+
+                    // Obtém o cheque especial do correntista
+                    const chequeEspecial = dados.cheque_especial;
+                    console.log("Cheque especial:", chequeEspecial);
+                    
+                    // Verifica se o nome de usuário corresponde ao nome de usuário do registro
+                    console.log("Verificando se o nome de usuário corresponde ao nome de usuário do registro...");
+                    const dadosNome = dados.username;
 
                     if (dados.nome === username) {
-                        // Redireciona para a página dashboard.html com os parâmetros da conta, nome de usuário e saldo
+                        // Armazena o número da conta, o nome de usuário, o saldo e o cheque especial no localStorage
+                        console.log("Nome de usuário correto. limpando localStorage...");
+                        localStorage.clear();
+                        // Redireciona para a página dashboard.html com os parâmetros da conta, nome de usuário, saldo e cheque especial
+                        console.log("Nome de usuário correto. Redirecionando para a página dashboard.html...");
+                        localStorage.setItem("accountNumber", accountNumber);
+                        localStorage.setItem("username", username);
+                        localStorage.setItem("saldo", saldo);
+                        localStorage.setItem("chequeEspecial", chequeEspecial);
+                        // Variavel a mais para teste de calculo do cheque especial
+                        localStorage.setItem("chequeEspecial2", chequeEspecial);
+
                         console.log("Redirecionando para a página dashboard.html...");
                         window.location.href = "../view/dashboard.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
                     } else {

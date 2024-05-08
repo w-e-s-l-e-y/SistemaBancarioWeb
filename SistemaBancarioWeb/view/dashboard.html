@@ -46,6 +46,7 @@
         <p>Conta: <span id="accountNumber"></span></p>
         <p>Nome: <span id="username"></span></p>
         <p>Saldo: R$ <span id="saldo"></span></p>
+        <p>Cheque Especial: <span id="chequeEspecial"></span></p>
         <!-- Outras informações da conta aqui -->
     </div>
 
@@ -56,13 +57,23 @@
         const username = urlParams.get('username');
         const saldo = urlParams.get('saldo');
 
+        // Recuperar o valor do cheque especial do localStorage
+        const chequeEspecial = localStorage.getItem('chequeEspecial');
+
+        // Exibir o valor do cheque especial na tela
+        if (chequeEspecial !== null && !isNaN(parseFloat(chequeEspecial))) { // Verifica se o cheque especial é válido
+            document.getElementById('chequeEspecial').textContent = 'R$ ' + parseFloat(chequeEspecial).toFixed(2); // Formata o cheque especial para duas casas decimais
+        } else {
+            document.getElementById('chequeEspecial').textContent = 'Cheque especial indisponível'; // Exibe uma mensagem de cheque especial indisponível se o cheque especial for inválido
+        }
+
         // Exibir os dados na página
         document.getElementById('accountNumber').textContent = accountNumber;
         document.getElementById('username').textContent = username;
 
         // Verifica se o saldo é válido e exibe na página
         if (saldo !== null && !isNaN(parseFloat(saldo))) { // Verifica se o saldo é válido
-            document.getElementById('saldo').textContent = 'R$ ' + parseFloat(saldo).toFixed(2); // Formata o saldo para duas casas decimais
+            document.getElementById('saldo').textContent = parseFloat(saldo).toFixed(2); // Formata o saldo para duas casas decimais
         } else {
             document.getElementById('saldo').textContent = 'Saldo indisponível'; // Exibe uma mensagem de saldo indisponível se o saldo for inválido
         }
@@ -71,14 +82,16 @@
         const saqueLink = document.getElementById('saqueLink');
         const transferenciaLink = document.getElementById('transferenciaLink');
 
-        // Adicionar os parâmetros à URL ao clicar nos links
-        saqueLink.addEventListener('click', function() {
+        // Adicionar os parâmetros à URL ao clicar nos links e ao localstorage
+
+        saqueLink.addEventListener('click', function () {
             saqueLink.href = `saque.html?accountNumber=${accountNumber}&username=${username}&saldo=${saldo}`;
         });
 
-        transferenciaLink.addEventListener('click', function() {
+        transferenciaLink.addEventListener('click', function () {
             transferenciaLink.href = `transferencia.html?accountNumber=${accountNumber}&username=${username}&saldo=${saldo}`;
         });
+
     </script>
 </body>
 
