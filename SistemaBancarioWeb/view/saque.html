@@ -198,6 +198,7 @@ configurando para conectar firebase e ajustar os dados:
                 alert("Por favor, insira um valor válido para depósito.");
                 return;
             }
+            console.log("Valor do depósito - Passo 1:", depositAmount);
 
             var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
 
@@ -226,7 +227,9 @@ configurando para conectar firebase e ajustar os dados:
                 correntista.chequeEspecial += excesso; // Aplica o restante do depósito ao limite do cheque especial
                 depositAmount -= excesso; // Atualiza o valor do depósito
             }
-
+            if (correntista.chequeEspecial < 0) {
+                correntista.chequeEspecial *= -1; // Torna positivo multiplicando por -1 novamente
+            }
             console.log("Saldo final após depósito:", correntista.saldo);
             console.log("Novo limite do cheque especial:", correntista.chequeEspecial);
 
@@ -234,7 +237,8 @@ configurando para conectar firebase e ajustar os dados:
             localStorage.setItem('saldo', correntista.saldo);
             localStorage.setItem('chequeEspecial', correntista.chequeEspecial);
 
-            alert("Depósito de R$ " + depositAmount.toFixed(2) + " realizado com sucesso!");
+            console.log("valor do depósito - Passo 2:", depositAmount);
+            alert("Depósito de R$ " + (depositAmount + excesso).toFixed(2) + " realizado com sucesso!");
         }
 
 
