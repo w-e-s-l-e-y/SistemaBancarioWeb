@@ -1,5 +1,8 @@
+configurando para conectar firebase e ajustar os dados:
+
 <!DOCTYPE html>
 <html lldng="pt-BR">
+
 
 <head>
     <meta charset="UTF-8">
@@ -7,6 +10,7 @@
     <title>Saque/Depósito - Sistema Bancário</title>
     <link rel="stylesheet" href="../public/styles.css"> <!-- Adiciona o arquivo de estilo externo -->
 </head>
+
 
 <body>
     <header>
@@ -20,6 +24,7 @@
         </nav>
     </header>
 
+
     <section class="transaction-form saque">
         <h2>Saque</h2>
         <form id="saqueForm">
@@ -28,8 +33,10 @@
             <input type="number" id="saqueAmount" name="saqueAmount" step="0.01" min="0" required>
             <button type="button" onclick="sacar()" id="btnSacar">Saque</button>
 
+
         </form>
     </section>
+
 
     <section class="transaction-form deposit">
         <h2>Depósito</h2>
@@ -40,52 +47,122 @@
         </form>
     </section>
 
+
     <!-- Inclua os arquivos do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
 
+
     <script>
 
+
         document.addEventListener("DOMContentLoaded", function () {
-            var accountNumber = urlParams.get('accountNumber');
-            var username = urlParams.get('username');
+            console.log("DOM carregado."); // Verifica se o DOM foi carregado corretamente
+
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const accountNumber = urlParams.get('accountNumber');
+            const username = urlParams.get('username');
+            console.log("Parâmetros da URL: ", urlParams.toString()); // Verifica os parâmetros da URL
+
 
             // Configurar os links
-            var dashboardLink = document.querySelector('a[href="dashboard.html"]');
-            var transferenciaLink = document.querySelector('a[href="transferencia.html"]');
+            const dashboardLink = document.querySelector('a[href="dashboard.html"]');
+            const transferenciaLink = document.querySelector('a[href="transferencia.html"]');
+            const sairLink = document.querySelector('a[href="index.html"]');
+            console.log("Links encontrados:", dashboardLink, transferenciaLink, sairLink); // Verifica se os links foram encontrados corretamente
+
 
             if (dashboardLink) {
                 dashboardLink.addEventListener("click", function (event) {
                     event.preventDefault(); // Impede o comportamento padrão do link
 
-                    // Consulta ao banco de dados para obter o saldo mais recente
-                    var correntistaRef = firebase.database().ref('correntistas/' + accountNumber);
-                    correntistaRef.once('value', function (snapshot) {
-                        var saldo = snapshot.val().saldo;
 
-                        // Atualizar a URL com o saldo mais recente
-                        var newURL = "dashboard.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
-                        window.location.href = newURL; // Redireciona para a nova URL
-                    });
+                    console.log("Link de dashboard clicado."); // Verifica se o evento de clique foi acionado corretamente
+
+
+                    atualizarSaldoERedirecionar('dashboard.html', accountNumber, username);
                 });
             }
+
 
             if (transferenciaLink) {
                 transferenciaLink.addEventListener("click", function (event) {
                     event.preventDefault(); // Impede o comportamento padrão do link
 
-                    // Consulta ao banco de dados para obter o saldo mais recente
-                    var correntistaRef = firebase.database().ref('correntistas/' + accountNumber);
-                    correntistaRef.once('value', function (snapshot) {
-                        var saldo = snapshot.val().saldo;
 
-                        // Atualizar a URL com o saldo mais recente
-                        var newURL = "transferencia.html?accountNumber=" + accountNumber + "&username=" + username + "&saldo=" + saldo;
-                        window.location.href = newURL; // Redireciona para a nova URL
-                    });
+                    console.log("Link de transferência clicado."); // Verifica se o evento de clique foi acionado corretamente
+
+
+                    atualizarSaldoERedirecionar('transferencia.html', accountNumber, username);
+                });
+            }
+
+
+            if (sairLink) {
+                sairLink.addEventListener("click", function (event) {
+                    event.preventDefault(); // Impede o comportamento padrão do link
+
+
+                    console.log("Link de sair clicado."); // Verifica se o evento de clique foi acionado corretamente
+
+
+                    atualizarSaldoERedirecionar('index.html', accountNumber, username);
                 });
             }
         });
+
+
+        // Função para atualizar o saldo no banco de dados e redirecionar para a nova página
+        function atualizarSaldoERedirecionar(page, accountNumber, username) {
+            console.log("Atualizando saldo e redirecionando."); // Verifica se a função foi chamada corretamente
+
+
+            // Recuperar os dados do correntista do localStorage
+            var saldo = parseFloat(localStorage.getItem('saldo'));
+            var chequeEspecial = parseFloat(localStorage.getItem('chequeEspecial'));
+
+
+            console.log("Saldo do localStorage:", saldo);
+            console.log("Cheque especial do localStorage:", chequeEspecial);
+
+
+            // Verificar se o valor do cheque especial é um número válido
+            if (isNaN(chequeEspecial)) {
+                console.warn("O valor do cheque especial não é um número válido. Definindo valor padrão de 0.");
+                chequeEspecial = 0; // Definir valor padrão
+            } else if (chequeEspecial < 0) {
+                console.warn("O valor do cheque especial é negativo. Convertendo para positivo.");
+                chequeEspecial *= -1; // Tornar o valor positivo multiplicando por -1
+            }
+
+
+            // Atualizar os dados do correntista no banco de dados do Firebase
+            firebase.database().ref('correntistas/' + accountNumber).update({
+                saldo: saldo,
+                cheque_Especial: chequeEspecial
+            }).then(function () {
+                console.log("Dados atualizados no banco de dados do Firebase com sucesso.");
+
+
+                // Atualizar a URL com os dados atualizados
+                const newURL = `${page}?accountNumber=${accountNumber}&username=${username}&saldo=${saldo}&chequeEspecial=${chequeEspecial}`;
+                console.log("Nova URL:", newURL); // Verifica se a nova URL foi montada corretamente
+
+
+                // Redireciona para a nova URL
+                window.location.href = newURL;
+            }).catch(function (error) {
+                console.error("Erro ao atualizar os dados no banco de dados do Firebase:", error);
+                alert("Erro ao atualizar os dados. Por favor, tente novamente mais tarde.");
+            });
+        }
+
+
+
+
+
+
 
 
         // Configuração do Firebase
@@ -100,13 +177,19 @@
             measurementId: "G-SGMM5N5BXW"
         };
 
+
         // Inicializar Firebase com a configuração importada
+        console.log("Inicializando Firebase."); // Verifica se a inicialização do Firebase foi iniciada
         firebase.initializeApp(firebaseConfig);
+
+
+
 
         // Extrair os parâmetros da URL
         const urlParams = new URLSearchParams(window.location.search);
         console.log("URL: ", window.location.href); // Log da URL completa
         console.log("Parâmetros da URL: ", urlParams.toString()); // Log dos parâmetros da URL
+
 
         // Função para depositar
         function deposit() {
@@ -117,7 +200,6 @@
             }
 
             var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
-            console.log("Número da conta:", accountNumber);
 
             // Recupera os dados do correntista do localStorage
             var correntista = {
@@ -127,8 +209,6 @@
                 chequeEspecial: parseFloat(localStorage.getItem('chequeEspecial'))
             };
 
-            console.log("Dados do correntista:", correntista);
-
             if (!correntista.accountNumber) {
                 console.log("Correntista não encontrado.");
                 return;
@@ -136,25 +216,17 @@
 
             console.log("Dados do correntista antes do depósito:", correntista);
 
-            // Se o correntista existir
-            if (correntista.saldo < 0) {
-                console.log("Saldo negativo detectado. Saldo atual:", correntista.saldo);
+            // Aplica o depósito ao saldo regular
+            correntista.saldo += depositAmount;
 
-                // Se o saldo for negativo, estamos lidando com o cheque especial
-                var valorCompensado = Math.min(Math.abs(correntista.saldo), depositAmount); // Calcula o valor a ser compensado
-                console.log("Valor a ser compensado:", valorCompensado);
-
-                correntista.saldo += valorCompensado; // Compensa o saldo negativo
-                correntista.chequeEspecial -= valorCompensado; // Reduz o saldo do cheque especial
-                depositAmount -= valorCompensado; // Reduz o valor do depósito
-                console.log("Depósito após compensação:", depositAmount);
+            // Verifica se o depósito excede o saldo regular e o limite do cheque especial
+            var excesso = correntista.saldo + correntista.chequeEspecial - depositAmount;
+            if (excesso < 0) {
+                // O depósito excede o saldo regular e o limite do cheque especial
+                correntista.chequeEspecial += excesso; // Aplica o restante do depósito ao limite do cheque especial
+                depositAmount -= excesso; // Atualiza o valor do depósito
             }
 
-            // Adiciona o restante do valor do depósito ao saldo
-            correntista.saldo += depositAmount;
-            // Aumenta o limite do cheque especial numero positivo
-
-            correntista.chequeEspecial += depositAmount;
             console.log("Saldo final após depósito:", correntista.saldo);
             console.log("Novo limite do cheque especial:", correntista.chequeEspecial);
 
@@ -166,12 +238,16 @@
         }
 
 
+
+
         function sacar() {
             var saqueAmount = parseFloat(document.getElementById("saqueAmount").value);
             console.log("Valor do saque:", saqueAmount);
 
+
             var accountNumber = urlParams.get('accountNumber'); // Obtém o número da conta dos parâmetros da URL
             console.log("Número da conta:", accountNumber);
+
 
             // Recupera os dados do correntista do localStorage
             var correntista = {
@@ -182,60 +258,77 @@
                 chequeEspecial2: parseFloat(localStorage.getItem('chequeEspecial2'))
             };
 
+
             console.log("Dados do correntista:", correntista);
+
 
             if (!correntista.accountNumber) {
                 console.log("Correntista não encontrado.");
                 return;
             }
 
+
             var saldoCorrentista = correntista.saldo; // Salva o valor do saldo em uma variável local
 
+
             console.log("Dados do correntista antes do saque:", correntista);
+
 
             // Verifica se o saldo é suficiente para o saque
             console.log("Valor do saque:", saqueAmount);
             console.log("Saldo do correntista:", saldoCorrentista);
             console.log("Limite do cheque especial:", correntista.chequeEspecial);
 
+
             // Calcula o saldo disponível, considerando o cheque especial utilizado anteriormente
             var saldoDisponivel = saldoCorrentista + Math.max(correntista.chequeEspecial2, 0);
             console.log("Saldo disponível:", saldoDisponivel);
 
 
+
+
             if (saldoDisponivel >= saqueAmount) {
                 console.log("Saldo ou limite do cheque especial é suficiente para o saque.");
 
+
                 // Restante do código permanece o mesmo
+
 
                 // Se o saldo for suficiente para cobrir o saque
                 if (saldoCorrentista >= saqueAmount) {
                     console.log("Saldo é suficiente para o saque sem usar o cheque especial.");
                     console.log("Atualizando o saldo do correntista:", saldoCorrentista - saqueAmount);
 
+
                     // Atualiza o saldo no localStorage
                     saldoCorrentista -= saqueAmount;
                     localStorage.setItem('saldo', saldoCorrentista);
+
 
                     alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
                 } else {
                     console.log("Saldo é insuficiente, utilizando cheque especial.");
 
+
                     // Calcula o novo saldo e o novo limite do cheque especial
                     var valorSaqueChequeEspecial = saqueAmount - saldoCorrentista;
                     console.log("Valor do saque do cheque especial:", valorSaqueChequeEspecial);
 
+
                     var novoLimiteChequeEspecial = correntista.chequeEspecial2 - valorSaqueChequeEspecial;
                     console.log("Novo limite do cheque especial:", novoLimiteChequeEspecial);
+
 
                     // Atualiza o limite do cheque especial e o saldo no localStorage
                     correntista.chequeEspecial = novoLimiteChequeEspecial;
                     localStorage.setItem('chequeEspecial', correntista.chequeEspecial);
 
+
                     // Adiciona o valor do saque do cheque especial ao saldo precedido de sinal negativo
                     saldoCorrentista -= saqueAmount;
                     localStorage.setItem('saldo', saldoCorrentista);
                     console.log("Saldo atualizado após utilizar cheque especial:", saldoCorrentista);
+
 
                     alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
                 }
@@ -244,13 +337,19 @@
                 alert("Valor do saque excede o limite do saldo e do cheque especial.");
             }
 
+
             console.log("Finalizando a função sacar.");
         }
 
 
 
 
+
+
+
+
     </script>
 </body>
+
 
 </html>
