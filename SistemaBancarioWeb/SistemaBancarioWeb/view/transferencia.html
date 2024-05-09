@@ -148,6 +148,18 @@
                     let saldoDestino = parseFloat(dadosDestino.saldo);
                     console.log("Saldo destino antes:", saldoDestino);
 
+                    // Atualiza o saldo da conta de destino no localStorage
+                    localStorage.setItem('saldo', correntista.saldo - amount);
+
+                    // Atualiza o saldo da conta de origem no localStorage
+                    localStorage.setItem('saldo', saldoDestino + amount);
+
+                    // Atualiza o cheque especial da conta de origem no localStorage, se necessário
+                    const novoChequeEspecialOrigem = correntista.chequeEspecial - amount;
+                    if (novoChequeEspecialOrigem < 0) {
+                        localStorage.setItem('chequeEspecial', novoChequeEspecialOrigem);
+                    }
+
                     saldoDestino += amount; // Adiciona o valor transferido ao saldo da conta de destino
 
                     console.log("Saldo destino após transferência:", saldoDestino);
@@ -172,6 +184,7 @@
                 transferenciaEmAndamento = false; // Marca a transferência como concluída
             });
         }
+
 
 
 
