@@ -65,30 +65,14 @@
         // Referência ao banco de dados
         const database = firebase.database();
 
-        // Recupera os dados do correntista do localStorage
-        var correntista = {
-            accountNumber: localStorage.getItem('accountNumber'),
-            username: localStorage.getItem('username'),
-            saldo: parseFloat(localStorage.getItem('saldo')),
-            chequeEspecial: parseFloat(localStorage.getItem('chequeEspecial'))
-        };
-
-        console.log("Dados do correntista:", correntista);
-
-        // Função para redirecionar para o Dashboard com os parâmetros do localStorage
-        function redirectToDashboard() {
-            const newParams = new URLSearchParams();
-            newParams.set('accountNumber', correntista.accountNumber);
-            newParams.set('username', correntista.username);
-            newParams.set('saldo', correntista.saldo);
-
-            window.location.href = `dashboard.html?${newParams}`;
-        }
-
         // Variável para verificar se a transferência está em andamento
         let transferenciaEmAndamento = false;
 
-        // Função transferir
+        // Função para redirecionar para o Dashboard
+        function redirectToDashboard() {
+            // Implemente conforme necessário
+        }
+
         function realizarTransferencia() {
             if (transferenciaEmAndamento) {
                 return; // Se a transferência já estiver em andamento, não faça nada
@@ -105,12 +89,14 @@
             console.log("Conta de destino:", destination);
 
             if (isNaN(amount) || amount <= 0) {
+                console.log("Valor inválido de transferência:", amount);
                 showMessage('error', 'Digite um valor válido para a transferência.');
                 transferenciaEmAndamento = false; // Marca a transferência como concluída
                 return;
             }
 
             if (!destination.trim()) {
+                console.log("Conta de destino em branco.");
                 showMessage('error', 'Digite a conta de destino.');
                 transferenciaEmAndamento = false; // Marca a transferência como concluída
                 return;
@@ -124,13 +110,35 @@
                 chequeEspecial: parseFloat(localStorage.getItem('chequeEspecial'))
             };
 
-            console.log("Dados do correntista:", correntista);
+            console.log("Dados do correntista (origem):", correntista);
 
             if (!correntista.accountNumber) {
+                console.log("Correntista não encontrado.");
                 showMessage('error', 'Correntista não encontrado.');
                 transferenciaEmAndamento = false; // Marca a transferência como concluída
                 return;
             }
+
+            if (correntista.accountNumber === destination) {
+                console.log("Operação impossível. Tente outra conta.");
+                showMessage('error', 'Operação impossível. Tente outra conta.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            // Verifica se há saldo suficiente (considerando o cheque especial)
+            var saldoDisponivel = correntista.saldo + Math.max(correntista.chequeEspecial, 0);
+
+            console.log("Saldo disponível (origem):", saldoDisponivel);
+
+            if (saldoDisponivel < amount) {
+                console.log("Saldo insuficiente para realizar a transferência.");
+                showMessage('error', 'Saldo e limite do cheque especial insuficientes para realizar a transferência.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            console.log("Transferindo:", amount, "para:", destination);
 
             // Obtém a referência do correntista de destino no banco de dados Firebase
             const correntistaDestinoRef = database.ref('correntistas/' + destination);
@@ -139,54 +147,67 @@
 
             // Realiza a transferência no Firebase
             correntistaDestinoRef.once('value', function (snapshot) {
-                console.log("Snapshot:", snapshot);
+                console.log("Snapshot (destino):", snapshot);
 
                 if (snapshot.exists()) {
                     const dadosDestino = snapshot.val();
                     console.log("Dados do destino:", dadosDestino);
 
                     let saldoDestino = parseFloat(dadosDestino.saldo);
-                    console.log("Saldo destino antes:", saldoDestino);
+                    console.log("Saldo destino antes da transferência:", saldoDestino);
 
-                    // Atualiza o saldo da conta de destino no localStorage
-                    localStorage.setItem('saldo', correntista.saldo - amount);
-
-                    // Atualiza o saldo da conta de origem no localStorage
-                    localStorage.setItem('saldo', saldoDestino + amount);
-
-                    // Atualiza o cheque especial da conta de origem no localStorage, se necessário
-                    const novoChequeEspecialOrigem = correntista.chequeEspecial - amount;
-                    if (novoChequeEspecialOrigem < 0) {
-                        localStorage.setItem('chequeEspecial', novoChequeEspecialOrigem);
+                    if (saldoDisponivel < amount) {
+                        console.log("Saldo insuficiente para realizar a transferência.");
+                        showMessage('error', 'Saldo insuficiente para realizar a transferência.');
+                        transferenciaEmAndamento = false; // Marca a transferência como concluída
+                        return;
                     }
 
-                    saldoDestino += amount; // Adiciona o valor transferido ao saldo da conta de destino
+                    console.log("Dados do correntista de destino:", dadosDestino);
 
-                    console.log("Saldo destino após transferência:", saldoDestino);
-
-                    // Atualiza o saldo da conta de destino e da conta de origem no Firebase
-                    const updates = {};
-                    updates['correntistas/' + destination + '/saldo'] = saldoDestino;
-                    updates['correntistas/' + correntista.accountNumber + '/saldo'] = correntista.saldo - amount;
-
-                    database.ref().update(updates)
+                    // Atualiza o saldo da conta de destino no Firebase
+                    const novoSaldoDestino = saldoDestino + amount;
+                    console.log("Novo saldo da conta de destino:", novoSaldoDestino);
+                    database.ref('correntistas/' + destination).update({ saldo: novoSaldoDestino })
                         .then(function () {
                             // Exibe mensagem de sucesso
                             showMessage('success', 'Transferência realizada com sucesso!');
+
+                            // Atualiza o saldo da conta de origem no Firebase
+                            const novoSaldoOrigem = correntista.saldo - amount;
+                            database.ref('correntistas/' + correntista.accountNumber).update({ saldo: novoSaldoOrigem })
+                                .then(function () {
+                                    // Atualiza o saldo da conta de origem no localStorage
+                                    localStorage.setItem('saldo', novoSaldoOrigem);
+                                    
+                                    // Atualiza o saldo do cheque especial no localStorage
+                                    const novoChequeEspecial = correntista.chequeEspecial;
+                                    localStorage.setItem('chequeEspecial', novoChequeEspecial);
+
+                                    // Atualiza o saldo da conta de destino no localStorage
+                                    const novoSaldoDestinoLocal = saldoDestino + amount;
+                                    localStorage.setItem('saldo_destino', novoSaldoDestinoLocal);
+
+                                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                                })
+                                .catch(function (error) {
+                                    console.log("Erro ao atualizar saldo da conta de origem:", error.message);
+                                    showMessage('error', 'Erro ao atualizar saldo da conta de origem.');
+                                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                                });
                         })
                         .catch(function (error) {
-                            showMessage('error', 'Erro ao realizar a transferência.');
+                            console.log("Erro ao atualizar saldo da conta de destino:", error.message);
+                            showMessage('error', 'Erro ao atualizar saldo da conta de destino.');
+                            transferenciaEmAndamento = false; // Marca a transferência como concluída
                         });
                 } else {
+                    console.log("Conta de destino não encontrada.");
                     showMessage('error', 'Conta de destino não encontrada.');
+                    transferenciaEmAndamento = false; // Marca a transferência como concluída
                 }
-
-                transferenciaEmAndamento = false; // Marca a transferência como concluída
             });
         }
-
-
-
 
 
 
