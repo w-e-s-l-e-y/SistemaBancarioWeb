@@ -1,5 +1,3 @@
-configurando para conectar firebase e ajustar os dados:
-
 <!DOCTYPE html>
 <html lldng="pt-BR">
 
@@ -217,33 +215,28 @@ configurando para conectar firebase e ajustar os dados:
 
             console.log("Dados do correntista antes do depósito:", correntista);
 
-            // Aplica o depósito ao saldo regular
-            correntista.saldo += depositAmount;
+            // Se o saldo for negativo, o valor do depósito é adicionado ao saldo e o cheque especial
+            if (correntista.saldo < 0) {
+                correntista.saldo += depositAmount;
+                correntista.chequeEspecial += depositAmount;
 
-            // Verifica se o depósito excede o saldo regular e o limite do cheque especial
-            var excesso = correntista.saldo + correntista.chequeEspecial - depositAmount;
-            if (excesso < 0) {
-                // O depósito excede o saldo regular e o limite do cheque especial
-                correntista.chequeEspecial += excesso; // Aplica o restante do depósito ao limite do cheque especial
-                depositAmount -= excesso; // Atualiza o valor do depósito
+            } else {
+                // Adiciona o valor depositado ao saldo regular
+                correntista.saldo += depositAmount;
             }
-            if (correntista.chequeEspecial < 0) {
-                correntista.chequeEspecial *= -1; // Torna positivo multiplicando por -1 novamente
-            }
-            console.log("Saldo final após depósito:", correntista.saldo);
-            console.log("Novo limite do cheque especial:", correntista.chequeEspecial);
 
             // Atualiza os dados do correntista no localStorage
             localStorage.setItem('saldo', correntista.saldo);
             localStorage.setItem('chequeEspecial', correntista.chequeEspecial);
 
-            console.log("valor do depósito - Passo 2:", depositAmount);
-            alert("Depósito de R$ " + (depositAmount + excesso).toFixed(2) + " realizado com sucesso!");
+            console.log("Depósito realizado com sucesso. Novos dados do correntista:", correntista);
+
+            alert("Depósito de R$ " + depositAmount.toFixed(2) + " realizado com sucesso!");
         }
 
 
 
-
+        // Função para sacar
         function sacar() {
             var saqueAmount = parseFloat(document.getElementById("saqueAmount").value);
             console.log("Valor do saque:", saqueAmount);
@@ -294,8 +287,6 @@ configurando para conectar firebase e ajustar os dados:
             if (saldoDisponivel >= saqueAmount) {
                 console.log("Saldo ou limite do cheque especial é suficiente para o saque.");
 
-
-                // Restante do código permanece o mesmo
 
 
                 // Se o saldo for suficiente para cobrir o saque

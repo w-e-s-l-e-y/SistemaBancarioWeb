@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferência</title>
+    <link rel="stylesheet" href="../public/styles.css">
+    <style>
+        .success-message {
+            color: green;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h2 class="title">Transferência</h2>
+
+        <nav>
+            <ul>
+                <!-- Adicione IDs aos links para poder acessá-los via JavaScript -->
+                <li><a id="dashboardLink" href="#" onclick="redirectToDashboard()">Dashboard</a></li>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+
+    </header>
+    <form id="transferForm">
+        <label for="amount">Valor da Transferência:</label>
+        <input type="number" id="amount" name="amount" min="0" step="0.01" required>
+
+        <label for="destination">Conta de Destino:</label>
+        <input type="text" id="destination" name="destination" required>
+
+        <button type="button" onclick="realizarTransferencia()">Transferir</button>
+        <div id="message" class="hidden"></div>
+    </form>
+
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtIGxA5l2gtDiA1XkGieUmFfWKQycEe3Q",
+            authDomain: "wykbank-5b21d.firebaseapp.com",
+            databaseURL: "https://wykbank-5b21d-default-rtdb.firebaseio.com",
+            projectId: "wykbank-5b21d",
+            storageBucket: "wykbank-5b21d.appspot.com",
+            messagingSenderId: "258416889029",
+            appId: "1:258416889029:web:44f6c7a611ee43116174ac",
+            measurementId: "G-SGMM5N5BXW"
+        };
+
+        // Inicializar Firebase com a configuração importada
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência ao banco de dados
+        const database = firebase.database();
+
+        // Variável para verificar se a transferência está em andamento
+        let transferenciaEmAndamento = false;
+
+        // Função para redirecionar para o Dashboard
+        function redirectToDashboard() {
+            // Obtém os dados do correntista do localStorage
+            var accountNumber = localStorage.getItem('accountNumber');
+            var saldo = localStorage.getItem('saldo');
+            var chequeEspecial = localStorage.getItem('chequeEspecial');
+
+            // Redireciona para o dashboard incluindo os parâmetros na URL
+            window.location.href = 'dashboard.html?accountNumber=' + accountNumber + '&saldo=' + saldo + '&chequeEspecial=' + chequeEspecial;
+        }
+
+        // Adiciona evento de clique ao link "Dashboard"
+        document.getElementById('dashboardLink').addEventListener('click', redirectToDashboard);
+
+
+
+        // Função para realizar a transferência
+        // Função para realizar a transferência
+        function realizarTransferencia() {
+            if (transferenciaEmAndamento) {
+                console.log("Transferência em andamento. Aguardando...");
+                return; // Se a transferência já estiver em andamento, não faça nada
+            }
+
+            transferenciaEmAndamento = true; // Marca a transferência como em andamento
+
+            console.log("Botão Transferir clicado!");
+            console.log("████████████████████████");
+
+            var amount = parseFloat(document.getElementById('amount').value);
+            var destination = document.getElementById('destination').value;
+
+            console.log("Valor da transferência:", amount);
+            console.log("Conta de destino:", destination);
+
+            // Verifica se o valor da transferência é um número válido
+            if (isNaN(amount) || amount <= 0) {
+                console.log("Valor inválido de transferência:", amount);
+                showMessage('error', 'Digite um valor válido para a transferência.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            if (!destination.trim()) {
+                console.log("Conta de destino em branco.");
+                showMessage('error', 'Digite a conta de destino.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            // Recupera os dados do correntista do localStorage
+            var correntista = {
+                accountNumber: localStorage.getItem('accountNumber'),
+                username: localStorage.getItem('username'),
+                saldo: parseFloat(localStorage.getItem('saldo')),
+                chequeEspecial: parseFloat(localStorage.getItem('chequeEspecial')),
+                chequeEspecial2: parseFloat(localStorage.getItem('chequeEspecial2'))
+            };
+
+            console.log("Dados do correntista (origem):", correntista);
+
+            if (!correntista.accountNumber) {
+                console.log("Correntista não encontrado.");
+                showMessage('error', 'Correntista não encontrado.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            if (correntista.accountNumber === destination) {
+                console.log("Operação impossível. Tente outra conta.");
+                showMessage('error', 'Operação impossível. Tente outra conta.');
+                transferenciaEmAndamento = false; // Marca a transferência como concluída
+                return;
+            }
+
+            // Calcula o saldo disponível, considerando o cheque especial utilizado anteriormente
+            var saldoDisponivel = correntista.saldo;
+            if (saldoDisponivel < 0) {
+                saldoDisponivel += correntista.chequeEspecial; // Subtrai o valor do cheque especial do saldo
+            }
+
+            console.log("Saldo disponível (origem):", saldoDisponivel);
+
+
+            // Verifica se o saldo disponível é suficiente para a transferência
+            if (saldoDisponivel < amount) {
+                console.log("Saldo insuficiente para realizar a transferência.");
+
+                // Verifica se o saldo disponível após utilizar o cheque especial é suficiente
+                var saldoAposChequeEspecial = saldoDisponivel + Math.max(correntista.chequeEspecial2, 0);
+                if (saldoAposChequeEspecial < amount) {
+                    console.log("Saldo insuficiente incluindo o cheque especial.");
+                    showMessage('error', 'Saldo insuficiente incluindo o cheque especial.');
+                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                    return;
+                }
+
+                // Calcula o valor necessário do cheque especial
+                var valorNecessarioChequeEspecial = amount - saldoDisponivel;
+                console.log("Valor necessário do cheque especial:", valorNecessarioChequeEspecial);
+
+                // Atualiza o saldo no Firebase
+                database.ref('correntistas/' + correntista.accountNumber).update({ saldo: 0 })
+                    .then(function () {
+                        // Realiza a transferência utilizando o cheque especial
+                        console.log("Transferindo saldo restante utilizando o cheque especial:", valorNecessarioChequeEspecial);
+
+                        // Atualiza o saldo disponível com o uso do cheque especial
+                        var novoSaldoComChequeEspecial = correntista.saldo - saldoDisponivel;
+                        localStorage.setItem('saldo', novoSaldoComChequeEspecial);
+
+                        // Continua o restante do processo de transferência...
+                    })
+                    .catch(function (error) {
+                        console.log("Erro ao atualizar saldo:", error.message);
+                        showMessage('error', 'Erro ao atualizar saldo.');
+                        transferenciaEmAndamento = false; // Marca a transferência como concluída
+                    });
+
+                return;
+            }
+
+            // Saldo suficiente para realizar a transferência sem usar o cheque especial
+
+            console.log("Transferindo:", amount, "para:", destination);
+
+            // Obtém a referência do correntista de destino no banco de dados Firebase
+            const correntistaDestinoRef = database.ref('correntistas/' + destination);
+
+            console.log("correntistaDestinoRef:", correntistaDestinoRef);
+
+            // Realiza a transferência no Firebase
+            correntistaDestinoRef.once('value', function (snapshot) {
+                console.log("Snapshot (destino):", snapshot);
+
+                if (snapshot.exists()) {
+                    const dadosDestino = snapshot.val();
+                    console.log("Dados do destino:", dadosDestino);
+
+                    let saldoDestino = parseFloat(dadosDestino.saldo);
+                    console.log("Saldo destino antes da transferência:", saldoDestino);
+
+                    console.log("Dados do correntista de destino:", dadosDestino);
+
+                    // Atualiza o saldo da conta de destino no Firebase
+                    const novoSaldoDestino = saldoDestino + amount;
+                    console.log("Novo saldo da conta de destino:", novoSaldoDestino);
+                    database.ref('correntistas/' + destination).update({ saldo: novoSaldoDestino })
+                        .then(function () {
+                            // Exibe mensagem de sucesso
+                            showMessage('success', 'Transferência realizada com sucesso!');
+
+                            // Atualiza o saldo da conta de origem no Firebase
+                            const novoSaldoOrigem = correntista.saldo - amount;
+                            database.ref('correntistas/' + correntista.accountNumber).update({ saldo: novoSaldoOrigem })
+                                .then(function () {
+                                    // Atualiza o saldo da conta de origem no localStorage
+                                    localStorage.setItem('saldo', novoSaldoOrigem);
+
+                                    // Atualiza o saldo do cheque especial no localStorage
+                                    if (novoSaldoOrigem <= 0) {
+                                        var novoChequeEspecial = correntista.chequeEspecial - amount;
+                                        localStorage.setItem('chequeEspecial', novoChequeEspecial);
+                                        console.log("Saldo do cheque especial atualizado no localStorage:", novoChequeEspecial);
+                                    }
+
+                                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                                })
+                                .catch(function (error) {
+                                    console.log("Erro ao atualizar saldo da conta de origem:", error.message);
+                                    showMessage('error', 'Erro ao atualizar saldo da conta de origem.');
+                                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                                });
+                        })
+                        .catch(function (error) {
+                            console.log("Erro ao atualizar saldo da conta de destino:", error.message);
+                            showMessage('error', 'Erro ao atualizar saldo da conta de destino.');
+                            transferenciaEmAndamento = false; // Marca a transferência como concluída
+                        });
+                } else {
+                    console.log("Conta de destino não encontrada.");
+                    showMessage('error', 'Conta de destino não encontrada.');
+                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                }
+            });
+        }
+
+
+
+
+
+
+
+
+
+        // Função para exibir mensagens na tela
+        function showMessage(type, message) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+
+            if (type === 'success') {
+                messageDiv.className = 'success-message';
+            } else {
+                messageDiv.className = 'error-message';
+            }
+
+            messageDiv.classList.remove('hidden');
+
+            // Limpa a mensagem após 3 segundos
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Teste 1: Transferência Válida
+        function testTransferenciaValida() {
+            // Simular entrada de dados válidos
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 2: Transferência para a Mesma Conta de Origem
+        function testTransferenciaMesmaConta() {
+            // Simular entrada da mesma conta de origem e destino
+            var contaOrigem = localStorage.getItem('accountNumber');
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = contaOrigem; // Mesma conta como destino
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 3: Transferência com Saldo Suficiente
+        function testTransferenciaSaldoSuficiente() {
+            // Simular entrada de transferência com saldo suficiente
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 4: Transferência com Saldo Insuficiente, mas Cheque Especial Disponível
+        function testTransferenciaSaldoInsuficienteComChequeEspecial() {
+            // Simular entrada de transferência com saldo insuficiente, mas com cheque especial disponível
+            document.getElementById('amount').value = '500'; // Valor da transferência maior que o saldo
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 5: Transferência com Saldo Insuficiente e Sem Cheque Especial Disponível
+        function testTransferenciaSaldoInsuficienteSemChequeEspecial() {
+            // Simular entrada de transferência com saldo insuficiente e sem cheque especial disponível
+            document.getElementById('amount').value = '2000'; // Valor da transferência maior que o saldo e cheque especial
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 6: Transferência com Saldo Menor que Zero
+        function testTransferenciaSaldoMenorQueZero() {
+            // Simular saldo menor que zero
+            localStorage.setItem('saldo', '-300'); // Saldo negativo
+            localStorage.setItem('chequeEspecial', '500'); // Cheque especial disponível
+
+            // Simular transferência para uma conta existente
+            document.getElementById('amount').value = '200'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Executa todos os testes quando a página é carregada
+        window.onload = function () {
+            testTransferenciaValida();
+            testTransferenciaMesmaConta();
+            testTransferenciaSaldoSuficiente();
+            testTransferenciaSaldoInsuficienteComChequeEspecial();
+            testTransferenciaSaldoInsuficienteSemChequeEspecial();
+            testTransferenciaSaldoMenorQueZero();
+        };
+
+    </script>
+</body>
+
+</html>

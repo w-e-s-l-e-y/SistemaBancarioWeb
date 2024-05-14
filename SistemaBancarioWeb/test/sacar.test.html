@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saque/Depósito - Sistema Bancário</title>
+    <link rel="stylesheet" href="../public/styles.css"> <!-- Adiciona o arquivo de estilo externo -->
+</head>
+
+<body>
+    <header>
+        <h1>Saque/Depósito - Sistema Bancário</h1>
+        <nav>
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="transferencia.html">Transferência</a></li>
+                <li><a href="index.html">Sair</a></li> <!-- Botão Sair -->
+            </ul>
+        </nav>
+    </header>
+
+    <section class="transaction-form saque">
+        <h2>Saque</h2>
+        <form id="saqueForm">
+            <input type="hidden" name="transaction_type" value="saque">
+            <label for="saqueAmount">Valor do Saque (R$):</label>
+            <input type="number" id="saqueAmount" name="saqueAmount" step="0.01" min="0" required>
+            <button type="button" onclick="sacar()" id="btnSacar">Saque</button>
+        </form>
+    </section>
+
+    <section class="transaction-form deposit">
+        <h2>Depósito</h2>
+        <form id="depositForm">
+            <label for="depositAmount">Valor do Depósito (R$):</label>
+            <input type="number" id="depositAmount" name="depositAmount" step="0.01" min="0" required>
+            <button type="button" onclick="deposit()">Depósito</button>
+        </form>
+        <button onclick="testarSaque()">Executar Testes</button>
+
+    </section>
+
+    <!-- Inclua os arquivos do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+    <script>
+        // Definir a variável urlParams globalmente
+        const urlParams = new URLSearchParams(window.location.search);
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("Página carregada. Executando testes...");
+            testarSaque();
+        });
+
+        // Função para sacar
+        function sacar() {
+            var saqueAmount = parseFloat(document.getElementById("saqueAmount").value);
+            console.log("Valor do saque:", saqueAmount);
+
+            // Recupera os dados do correntista do localStorage
+            var correntista = {
+                accountNumber: localStorage.getItem('accountNumber'),
+                username: localStorage.getItem('username'),
+                saldo: parseFloat(localStorage.getItem('saldo')),
+                chequeEspecial: parseFloat(localStorage.getItem('chequeEspecial'))
+            };
+
+            console.log("Dados do correntista:", correntista);
+
+            if (!correntista.accountNumber) {
+                console.log("Correntista não encontrado.");
+                return;
+            }
+
+            var saldoCorrentista = correntista.saldo; // Salva o valor do saldo em uma variável local
+
+            console.log("Dados do correntista antes do saque:", correntista);
+
+            // Verifica se o saldo é suficiente para o saque
+            console.log("Valor do saque:", saqueAmount);
+            console.log("Saldo do correntista:", saldoCorrentista);
+            console.log("Limite do cheque especial:", correntista.chequeEspecial);
+
+            // Calcula o saldo disponível, considerando o cheque especial
+            var saldoDisponivel = saldoCorrentista + correntista.chequeEspecial;
+            console.log("Saldo disponível:", saldoDisponivel);
+
+            if (saldoDisponivel >= saqueAmount) {
+                console.log("Saldo ou limite do cheque especial é suficiente para o saque.");
+
+                // Se o saldo for suficiente para cobrir o saque
+                if (saldoCorrentista >= saqueAmount) {
+                    console.log("Saldo é suficiente para o saque sem usar o cheque especial.");
+                    console.log("Atualizando o saldo do correntista:", saldoCorrentista - saqueAmount);
+
+                    // Atualiza o saldo no localStorage
+                    saldoCorrentista -= saqueAmount;
+                    localStorage.setItem('saldo', saldoCorrentista);
+
+                    alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                } else {
+                    console.log("Saldo é insuficiente, utilizando cheque especial.");
+
+                    // Calcula o novo saldo e o novo limite do cheque especial
+                    var valorSaqueChequeEspecial = saqueAmount - saldoCorrentista;
+                    console.log("Valor do saque do cheque especial:", valorSaqueChequeEspecial);
+
+                    var novoSaldo = saldoCorrentista - saqueAmount;
+                    console.log("Novo saldo:", novoSaldo);
+
+                    // Atualiza o saldo e o limite do cheque especial no localStorage
+                    localStorage.setItem('saldo', novoSaldo);
+
+                    alert("Saque de R$ " + saqueAmount.toFixed(2) + " realizado com sucesso!");
+                }
+            } else {
+                console.log("Saldo insuficiente para realizar o saque.");
+                alert("Valor do saque excede o limite do saldo e do cheque especial.");
+            }
+
+            console.log("Finalizando a função sacar.");
+        }
+
+
+
+
+        // Função de teste para a função sacar
+        function testarSaque() {
+            // Caso 1: Saldo suficiente para o saque
+            localStorage.setItem('accountNumber', '123456');
+            localStorage.setItem('username', 'usuario_teste');
+            localStorage.setItem('saldo', '1000');
+            localStorage.setItem('chequeEspecial', '500');
+
+            document.getElementById = function (id) {
+                return { value: '500' }; // Valor do saque
+            };
+
+            sacar(); // Chama a função sacar
+
+            // Verifica se o saldo foi deduzido corretamente após o saque
+            console.assert(localStorage.getItem('saldo') === '500', 'Teste falhou: Saldo não foi deduzido corretamente após o saque.');
+
+            // Caso 2: Saldo insuficiente para o saque
+            localStorage.setItem('saldo', '200');
+
+            sacar(); // Chama a função sacar
+            // Verifica se o saldo foi corretamente negativo e se o valor do cheque especial foi corretamente deduzido
+            console.assert(localStorage.getItem('saldo') === '-300', 'Teste falhou: Saldo não foi negativo corretamente após o uso do cheque especial.');
+        }
+    </script>
+</body>
+
+</html>
