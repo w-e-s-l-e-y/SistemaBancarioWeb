@@ -83,9 +83,12 @@
         document.getElementById('dashboardLink').addEventListener('click', redirectToDashboard);
 
 
+
+        // Função para realizar a transferência
         // Função para realizar a transferência
         function realizarTransferencia() {
             if (transferenciaEmAndamento) {
+                console.log("Transferência em andamento. Aguardando...");
                 return; // Se a transferência já estiver em andamento, não faça nada
             }
 
@@ -100,6 +103,7 @@
             console.log("Valor da transferência:", amount);
             console.log("Conta de destino:", destination);
 
+            // Verifica se o valor da transferência é um número válido
             if (isNaN(amount) || amount <= 0) {
                 console.log("Valor inválido de transferência:", amount);
                 showMessage('error', 'Digite um valor válido para a transferência.');
@@ -141,44 +145,52 @@
 
             // Calcula o saldo disponível, considerando o cheque especial utilizado anteriormente
             var saldoDisponivel = correntista.saldo;
-            if (saldoDisponivel <= 0) {
-                saldoDisponivel += correntista.chequeEspecial2;
+            if (saldoDisponivel < 0) {
+                saldoDisponivel += correntista.chequeEspecial; // Subtrai o valor do cheque especial do saldo
             }
-
-            console.log("Saldo disponível:", saldoDisponivel);
 
             console.log("Saldo disponível (origem):", saldoDisponivel);
 
+
+            // Verifica se o saldo disponível é suficiente para a transferência
             if (saldoDisponivel < amount) {
                 console.log("Saldo insuficiente para realizar a transferência.");
 
+                // Verifica se o saldo disponível após utilizar o cheque especial é suficiente
+                var saldoAposChequeEspecial = saldoDisponivel + Math.max(correntista.chequeEspecial2, 0);
+                if (saldoAposChequeEspecial < amount) {
+                    console.log("Saldo insuficiente incluindo o cheque especial.");
+                    showMessage('error', 'Saldo insuficiente incluindo o cheque especial.');
+                    transferenciaEmAndamento = false; // Marca a transferência como concluída
+                    return;
+                }
+
                 // Calcula o valor necessário do cheque especial
-                var valorNecessarioChequeEspecial = amount - correntista.saldo;
+                var valorNecessarioChequeEspecial = amount - saldoDisponivel;
                 console.log("Valor necessário do cheque especial:", valorNecessarioChequeEspecial);
 
-                // Atualiza o saldo e o limite do cheque especial no localStorage
-                correntista.saldo = 0;
-                correntista.chequeEspecial2 -= valorNecessarioChequeEspecial;
-                localStorage.setItem('saldo', correntista.saldo);
-                localStorage.setItem('chequeEspecial2', correntista.chequeEspecial2);
-
                 // Atualiza o saldo no Firebase
-                database.ref('correntistas/' + correntista.accountNumber).update({ saldo: correntista.saldo, chequeEspecial2: correntista.chequeEspecial2 })
+                database.ref('correntistas/' + correntista.accountNumber).update({ saldo: 0 })
                     .then(function () {
-                        // Realiza a transferência do valor restante
-                        var valorRestante = amount - valorNecessarioChequeEspecial;
-                        console.log("Transferindo:", valorRestante, "para:", destination);
+                        // Realiza a transferência utilizando o cheque especial
+                        console.log("Transferindo saldo restante utilizando o cheque especial:", valorNecessarioChequeEspecial);
+
+                        // Atualiza o saldo disponível com o uso do cheque especial
+                        var novoSaldoComChequeEspecial = correntista.saldo - saldoDisponivel;
+                        localStorage.setItem('saldo', novoSaldoComChequeEspecial);
 
                         // Continua o restante do processo de transferência...
                     })
                     .catch(function (error) {
-                        console.log("Erro ao atualizar saldo e limite do cheque especial:", error.message);
-                        showMessage('error', 'Erro ao atualizar saldo e limite do cheque especial.');
+                        console.log("Erro ao atualizar saldo:", error.message);
+                        showMessage('error', 'Erro ao atualizar saldo.');
                         transferenciaEmAndamento = false; // Marca a transferência como concluída
                     });
 
                 return;
             }
+
+            // Saldo suficiente para realizar a transferência sem usar o cheque especial
 
             console.log("Transferindo:", amount, "para:", destination);
 
@@ -198,13 +210,6 @@
                     let saldoDestino = parseFloat(dadosDestino.saldo);
                     console.log("Saldo destino antes da transferência:", saldoDestino);
 
-                    if (saldoDisponivel < amount) {
-                        console.log("Saldo insuficiente para realizar a transferência.");
-                        showMessage('error', 'Saldo insuficiente para realizar a transferência.');
-                        transferenciaEmAndamento = false; // Marca a transferência como concluída
-                        return;
-                    }
-
                     console.log("Dados do correntista de destino:", dadosDestino);
 
                     // Atualiza o saldo da conta de destino no Firebase
@@ -222,35 +227,14 @@
                                     // Atualiza o saldo da conta de origem no localStorage
                                     localStorage.setItem('saldo', novoSaldoOrigem);
 
-                                    // Calcula o novo saldo do cheque especial após a saída
-                                    const novoSaldoChequeEspecial = correntista.chequeEspecial - amount;
-                                    console.log("Novo saldo do cheque especial:", novoSaldoChequeEspecial);
-
-
                                     // Atualiza o saldo do cheque especial no localStorage
                                     if (novoSaldoOrigem <= 0) {
-                                        localStorage.setItem('chequeEspecial', novoSaldoChequeEspecial);
-                                        transferenciaEmAndamento = false; // Marca a transferência como concluída
-                                    } else {
-                                        transferenciaEmAndamento = false; // Marca a transferência como concluída
+                                        var novoChequeEspecial = correntista.chequeEspecial - amount;
+                                        localStorage.setItem('chequeEspecial', novoChequeEspecial);
+                                        console.log("Saldo do cheque especial atualizado no localStorage:", novoChequeEspecial);
                                     }
 
-
-                                    // Atualiza o saldo do cheque especial no Firebase
-                                    if (novoSaldoOrigem <= 0) {
-                                        database.ref('correntistas/' + correntista.accountNumber).update({ cheque_Especial: novoSaldoChequeEspecial })
-                                            .then(function () {
-                                                // Exibe mensagem de sucesso ou faça outras operações necessárias
-                                                transferenciaEmAndamento = false; // Marca a transferência como concluída
-                                            })
-                                            .catch(function (error) {
-                                                console.log("Erro ao atualizar saldo do cheque especial:", error.message);
-                                                // Lidar com o erro, se necessário
-                                                transferenciaEmAndamento = false; // Marca a transferência como concluída
-                                            });
-                                    } else {
-                                        transferenciaEmAndamento = false; // Marca a transferência como concluída
-                                    }
+                                    transferenciaEmAndamento = false; // Marca a transferência como concluída
                                 })
                                 .catch(function (error) {
                                     console.log("Erro ao atualizar saldo da conta de origem:", error.message);
@@ -274,6 +258,11 @@
 
 
 
+
+
+
+
+
         // Função para exibir mensagens na tela
         function showMessage(type, message) {
             const messageDiv = document.getElementById('message');
@@ -293,6 +282,82 @@
                 messageDiv.classList.add('hidden');
             }, 3000);
         }
+
+        // Teste 1: Transferência Válida
+        function testTransferenciaValida() {
+            // Simular entrada de dados válidos
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 2: Transferência para a Mesma Conta de Origem
+        function testTransferenciaMesmaConta() {
+            // Simular entrada da mesma conta de origem e destino
+            var contaOrigem = localStorage.getItem('accountNumber');
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = contaOrigem; // Mesma conta como destino
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 3: Transferência com Saldo Suficiente
+        function testTransferenciaSaldoSuficiente() {
+            // Simular entrada de transferência com saldo suficiente
+            document.getElementById('amount').value = '100'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 4: Transferência com Saldo Insuficiente, mas Cheque Especial Disponível
+        function testTransferenciaSaldoInsuficienteComChequeEspecial() {
+            // Simular entrada de transferência com saldo insuficiente, mas com cheque especial disponível
+            document.getElementById('amount').value = '500'; // Valor da transferência maior que o saldo
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 5: Transferência com Saldo Insuficiente e Sem Cheque Especial Disponível
+        function testTransferenciaSaldoInsuficienteSemChequeEspecial() {
+            // Simular entrada de transferência com saldo insuficiente e sem cheque especial disponível
+            document.getElementById('amount').value = '2000'; // Valor da transferência maior que o saldo e cheque especial
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Teste 6: Transferência com Saldo Menor que Zero
+        function testTransferenciaSaldoMenorQueZero() {
+            // Simular saldo menor que zero
+            localStorage.setItem('saldo', '-300'); // Saldo negativo
+            localStorage.setItem('chequeEspecial', '500'); // Cheque especial disponível
+
+            // Simular transferência para uma conta existente
+            document.getElementById('amount').value = '200'; // Valor da transferência
+            document.getElementById('destination').value = '789123'; // Conta de destino existente
+
+            // Chamar a função realizarTransferencia()
+            realizarTransferencia();
+        }
+
+        // Executa todos os testes quando a página é carregada
+        window.onload = function () {
+            testTransferenciaValida();
+            testTransferenciaMesmaConta();
+            testTransferenciaSaldoSuficiente();
+            testTransferenciaSaldoInsuficienteComChequeEspecial();
+            testTransferenciaSaldoInsuficienteSemChequeEspecial();
+            testTransferenciaSaldoMenorQueZero();
+        };
+
     </script>
 </body>
 

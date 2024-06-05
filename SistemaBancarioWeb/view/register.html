@@ -90,6 +90,7 @@
 
                     // Cria o novo registro com o número de conta gerado automaticamente
                     const novoRegistroRef = database.ref('correntistas/' + proximoNumeroConta);
+            const chequeEspecial = saldoInicial * 4; // Calcula o valor do cheque especial e do cheque especial fixo
                     novoRegistroRef.set({
                         nome: nome,
                         idade: idade,
@@ -97,7 +98,8 @@
                         tipo: tipo,
                         ativo: 1,
                         saldo: saldoInicial,
-                        cheque_Especial: 900,
+                        cheque_Especial: chequeEspecial,
+                        cheque_Especial_Fixo: chequeEspecial,
                         conta: proximoNumeroConta
                     });
 
